@@ -1,0 +1,45 @@
+{
+  "expo": {
+    "name": "AR Drawing",
+    "slug": "ar-drawing-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#0E0E12"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "AR Drawing uses your camera to overlay a reference image so you can trace it onto paper.",
+        "NSPhotoLibraryUsageDescription": "AR Drawing needs access to your photos so you can choose a reference image to trace."
+      }
+    },
+    "android": {
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_MEDIA_IMAGES"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "AR Drawing uses your camera to overlay a reference image so you can trace it onto paper."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "AR Drawing needs access to your photos so you can choose a reference image to trace."
+        }
+      ]
+    ]
+  }
+}
