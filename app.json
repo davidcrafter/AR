@@ -17,14 +17,19 @@
       "supportsTablet": true,
       "infoPlist": {
         "NSCameraUsageDescription": "AR Drawing uses your camera to overlay a reference image so you can trace it onto paper.",
-        "NSPhotoLibraryUsageDescription": "AR Drawing needs access to your photos so you can choose a reference image to trace."
+        "NSPhotoLibraryUsageDescription": "AR Drawing needs access to your photos so you can choose a reference image to trace.",
+        "NSPhotoLibraryAddUsageDescription": "AR Drawing saves your drawing recordings to your photo library.",
+        "NSMicrophoneUsageDescription": "AR Drawing may access the microphone while recording your drawing session."
       }
     },
     "android": {
       "edgeToEdgeEnabled": true,
       "permissions": [
         "android.permission.CAMERA",
-        "android.permission.READ_MEDIA_IMAGES"
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
       ]
     },
     "plugins": [
@@ -38,6 +43,14 @@
         "expo-image-picker",
         {
           "photosPermission": "AR Drawing needs access to your photos so you can choose a reference image to trace."
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "AR Drawing saves your drawing recordings to your photo library.",
+          "savePhotosPermission": "AR Drawing saves your drawing recordings to your photo library.",
+          "isAccessMediaLocationEnabled": false
         }
       ]
     ]

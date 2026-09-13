@@ -17,6 +17,7 @@ export default function ControlsBar({
   onToggleFlip,
   onReset,
   onFlipCamera,
+  onSave,
 }) {
   return (
     <View style={styles.container}>
@@ -33,6 +34,16 @@ export default function ControlsBar({
           </View>
           <Text style={styles.sliderValue}>{Math.round(opacity * 100)}%</Text>
         </View>
+      )}
+
+      {onSave && (
+        <TouchableOpacity
+          style={styles.saveButton}
+          onPress={onSave}
+          activeOpacity={0.9}
+        >
+          <Text style={styles.saveButtonText}>💾 Save project</Text>
+        </TouchableOpacity>
       )}
 
       <View style={styles.buttonRow}>
@@ -105,6 +116,17 @@ const styles = StyleSheet.create({
     width: 44,
     textAlign: "right",
   },
+  saveButton: {
+    height: 48,
+    borderRadius: radius.md,
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: spacing.md,
+  },
+  saveButtonText: { color: colors.text, fontWeight: "700", fontSize: 15 },
   buttonRow: {
     flexDirection: "row",
     justifyContent: "space-around",

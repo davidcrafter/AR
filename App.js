@@ -9,30 +9,60 @@ import { colors } from "./src/theme";
 /**
  * Root component.
  *
- * V1 keeps navigation intentionally simple: a small state machine flips
- * between the two screens. This avoids pulling in a navigation library
- * (and its native dependencies) for a two-screen app.
+ * Navigation is intentionally a small state machine flipping between the two
+ * screens (no navigation library / native deps for a two-screen app).
+ *
+ * `session` carries everything the Draw screen needs. A fresh image starts a
+ * new (unsaved) session; opening a saved project seeds the session with its
+ * stored transform / opacity / flip so the overlay is restored exactly.
  */
 export default function App() {
   const [route, setRoute] = useState("home"); // 'home' | 'draw'
-  const [imageUri, setImageUri] = useState(null);
+  const [session, setSession] = useState(null);
 
+  // Start tracing a brand-new image (no saved project yet).
   const startTracing = useCallback((uri) => {
-    setImageUri(uri);
+    setSession({
+      imageUri: uri,
+      projectId: null,
+      name: "",
+      transform: null,
+      opacity: 0.5,
+      flipped: false,
+    });
     setRoute("draw");
   }, []);
 
-  const goHome = useCallback(() => {
-    setRoute("home");
+  // Resume a saved project.
+  const openProject = useCallback((project) => {
+    setSession({
+      imageUri: project.imageUri,
+      projectId: project.id,
+      name: project.name,
+      transform: project.transform,
+      opacity: project.opacity,
+      flipped: project.flipped,
+    });
+    setRoute("draw");
   }, []);
+
+  const goHome = useCallback(() => setRoute("home"), []);
 
   return (
     <View style={styles.root}>
       <StatusBar style="light" />
-      {route === "home" ? (
-        <HomeScreen onStartTracing={startTracing} initialImageUri={imageUri} />
+      {route === "home" || !session ? (
+        <HomeScreen onStartTracing={startTracing} onOpenProject={openProject} />
       ) : (
-        <DrawScreen imageUri={imageUri} onBack={goHome} />
+        <DrawScreen
+          imageUri={session.imageUri}
+          projectId={session.projectId}
+          initialName={session.name}
+          initialTransform={session.transform}
+          initialOpacity={session.opacity}
+          initialFlipped={session.flipped}
+          onBack={goHome}
+        />
       )}
     </View>
   );
