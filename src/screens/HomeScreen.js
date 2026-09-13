@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 
+import { loadProjects, deleteProject } from "../storage/projects";
 import { colors, radius, spacing } from "../theme";
 
 /**
@@ -22,10 +23,38 @@ import { colors, radius, spacing } from "../theme";
  *  - Let the user choose a reference image from their photo library
  *    or capture one with the camera.
  *  - Preview the chosen image and hand it off to the Draw screen.
+ *  - List saved projects so the user can reopen or delete them.
  */
-export default function HomeScreen({ onStartTracing, initialImageUri }) {
-  const [imageUri, setImageUri] = useState(initialImageUri || null);
+export default function HomeScreen({ onStartTracing, onOpenProject }) {
+  const [imageUri, setImageUri] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [projects, setProjects] = useState([]);
+
+  // Reload saved projects whenever this screen mounts (it remounts every time
+  // we return from the Draw screen, so newly-saved projects show up).
+  useEffect(() => {
+    let active = true;
+    loadProjects().then((list) => {
+      if (active) setProjects(list);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const confirmDelete = (project) => {
+    Alert.alert("Delete project", `Delete "${project.name}"?`, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          const next = await deleteProject(project.id);
+          if (next) setProjects(next);
+        },
+      },
+    ]);
+  };
 
   const pickFromLibrary = async () => {
     try {
@@ -85,7 +114,7 @@ export default function HomeScreen({ onStartTracing, initialImageUri }) {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <Text style={styles.badge}>AR • V1</Text>
+          <Text style={styles.badge}>AR • V2</Text>
           <Text style={styles.title}>AR Drawing</Text>
           <Text style={styles.subtitle}>
             Trace any picture onto real paper. Pick a reference image, point
@@ -156,9 +185,61 @@ export default function HomeScreen({ onStartTracing, initialImageUri }) {
           />
           <Tip index="4" text="Trace what you see through the camera." />
         </View>
+
+        {projects.length > 0 && (
+          <View style={styles.projects}>
+            <Text style={styles.projectsTitle}>Saved projects</Text>
+            {projects.map((p) => (
+              <View key={p.id} style={styles.projectRow}>
+                <TouchableOpacity
+                  style={styles.projectMain}
+                  onPress={() => onOpenProject(p)}
+                  activeOpacity={0.8}
+                >
+                  <Image
+                    source={{ uri: p.imageUri }}
+                    style={styles.projectThumb}
+                    resizeMode="cover"
+                  />
+                  <View style={styles.projectInfo}>
+                    <Text style={styles.projectName} numberOfLines={1}>
+                      {p.name}
+                    </Text>
+                    <Text style={styles.projectMeta}>
+                      {formatDate(p.updatedAt)}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.projectDelete}
+                  onPress={() => confirmDelete(p)}
+                  activeOpacity={0.7}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <Text style={styles.projectDeleteText}>🗑️</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
+}
+
+function formatDate(ts) {
+  if (!ts) return "";
+  try {
+    const d = new Date(ts);
+    return d.toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return "";
+  }
 }
 
 function Tip({ index, text }) {
@@ -281,4 +362,42 @@ const styles = StyleSheet.create({
   },
   tipBulletText: { color: colors.text, fontWeight: "800", fontSize: 13 },
   tipText: { color: colors.textMuted, fontSize: 14, flex: 1, lineHeight: 20 },
+
+  projects: { marginTop: spacing.lg },
+  projectsTitle: {
+    color: colors.text,
+    fontWeight: "700",
+    fontSize: 16,
+    marginBottom: spacing.md,
+  },
+  projectRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    padding: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  projectMain: { flexDirection: "row", alignItems: "center", flex: 1 },
+  projectThumb: {
+    width: 52,
+    height: 52,
+    borderRadius: radius.sm,
+    backgroundColor: colors.surfaceAlt,
+    marginRight: spacing.md,
+  },
+  projectInfo: { flex: 1 },
+  projectName: { color: colors.text, fontWeight: "700", fontSize: 15 },
+  projectMeta: {
+    color: colors.textMuted,
+    fontSize: 12,
+    marginTop: 2,
+  },
+  projectDelete: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  projectDeleteText: { fontSize: 18 },
 });

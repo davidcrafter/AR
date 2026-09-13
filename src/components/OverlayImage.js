@@ -1,6 +1,8 @@
 import React, { useMemo, useRef, useState } from "react";
 import { Animated, PanResponder, StyleSheet } from "react-native";
 
+const DEFAULT_TRANSFORM = { tx: 0, ty: 0, scale: 1, rot: 0 };
+
 /**
  * The draggable / scalable / rotatable reference image that floats above the
  * camera feed.
@@ -13,10 +15,27 @@ import { Animated, PanResponder, StyleSheet } from "react-native";
  * The committed transform lives in a ref; a mirror lives in Animated.Values so
  * the view updates smoothly. When `locked` is true, all gestures are ignored so
  * the artist can trace without nudging the overlay.
+ *
+ * Props:
+ *   - uri: reference image URI
+ *   - opacity: Animated value (0..1)
+ *   - locked / flipped: booleans
+ *   - initialTransform: {tx,ty,scale,rot} to restore a saved project
+ *   - onTransformChange: (transform) => void, called when a gesture ends so the
+ *     parent can persist the current position/scale/rotation.
  */
-export default function OverlayImage({ uri, opacity, locked, flipped }) {
+export default function OverlayImage({
+  uri,
+  opacity,
+  locked,
+  flipped,
+  initialTransform,
+  onTransformChange,
+}) {
+  const initial = { ...DEFAULT_TRANSFORM, ...(initialTransform || {}) };
+
   // Committed transform (persists between gestures).
-  const committed = useRef({ tx: 0, ty: 0, scale: 1, rot: 0 });
+  const committed = useRef({ ...initial });
 
   // Per-gesture bookkeeping.
   const gesture = useRef({
@@ -26,11 +45,11 @@ export default function OverlayImage({ uri, opacity, locked, flipped }) {
     startAngle: 0,
   });
 
-  // Animated mirrors for smooth rendering.
-  const tx = useRef(new Animated.Value(0)).current;
-  const ty = useRef(new Animated.Value(0)).current;
-  const scale = useRef(new Animated.Value(1)).current;
-  const rot = useRef(new Animated.Value(0)).current;
+  // Animated mirrors for smooth rendering, seeded from the initial transform.
+  const tx = useRef(new Animated.Value(initial.tx)).current;
+  const ty = useRef(new Animated.Value(initial.ty)).current;
+  const scale = useRef(new Animated.Value(initial.scale)).current;
+  const rot = useRef(new Animated.Value(initial.rot)).current;
 
   const [size] = useState({ w: 260, h: 260 });
 
@@ -44,6 +63,17 @@ export default function OverlayImage({ uri, opacity, locked, flipped }) {
     ty.setValue(y);
     scale.setValue(s);
     rot.setValue(r);
+  };
+
+  const commitAndReport = () => {
+    committed.current = {
+      tx: tx.__getValue(),
+      ty: ty.__getValue(),
+      scale: scale.__getValue(),
+      rot: rot.__getValue(),
+    };
+    gesture.current.mode = null;
+    if (onTransformChange) onTransformChange({ ...committed.current });
   };
 
   const panResponder = useMemo(
@@ -99,25 +129,8 @@ export default function OverlayImage({ uri, opacity, locked, flipped }) {
           }
         },
 
-        onPanResponderRelease: () => {
-          // Commit whatever the animated values currently hold.
-          committed.current = {
-            tx: tx.__getValue(),
-            ty: ty.__getValue(),
-            scale: scale.__getValue(),
-            rot: rot.__getValue(),
-          };
-          gesture.current.mode = null;
-        },
-        onPanResponderTerminate: () => {
-          committed.current = {
-            tx: tx.__getValue(),
-            ty: ty.__getValue(),
-            scale: scale.__getValue(),
-            rot: rot.__getValue(),
-          };
-          gesture.current.mode = null;
-        },
+        onPanResponderRelease: commitAndReport,
+        onPanResponderTerminate: commitAndReport,
       }),
     [locked],
   );
