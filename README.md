@@ -1,11 +1,7 @@
-# AR Drawing Pro — Web
+# AR Drawing Pro — Web Preview
 
 Live: https://davidcrafter.github.io/AR/
 
-Trace any image through your camera and record your drawing session as video.
-Open on an iPhone (Safari) or Android (Chrome) for the best experience.
-
-## Files
-- `index.html` — main app
-- `style.css` — mobile-first UI
-- `app.js`   — camera + gesture + MediaRecorder logic
+This is the **web preview** of the app (deployed via GitHub Pages). The full
+project — including the Capacitor iOS + Android build system, permission
+configs, and CI — lives on the [`capacitor` branch](https://github.com/davidcrafter/AR/tree/capacitor).
