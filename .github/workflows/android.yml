@@ -22,8 +22,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: app/package.json
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -31,30 +29,61 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      # ubuntu-latest already ships with Android SDK pre-installed
+      # at /usr/local/lib/android/sdk (ANDROID_HOME + ANDROID_SDK_ROOT set).
+      # We just verify it and accept licenses.
+      - name: Verify Android SDK
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          ls "$ANDROID_HOME/platforms" || true
+          ls "$ANDROID_HOME/build-tools" || true
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+        working-directory: .
 
-      - name: Install dependencies
-        run: npm install
-
-      - name: Generate icons & splash
-        run: npx capacitor-assets generate --iconBackgroundColor '#ff3b30' --splashBackgroundColor '#0a0a0f' || true
+      - name: Install npm dependencies
+        run: npm install --no-audit --no-fund
 
       - name: Add Android platform
-        run: npx cap add android || true
+        run: npx cap add android
+        continue-on-error: true
 
-      - name: Sync Capacitor
+      - name: Apply required permissions to AndroidManifest
+        run: |
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          if [ -f "$MANIFEST" ] && ! grep -q "android.permission.CAMERA" "$MANIFEST"; then
+            # Insert permissions right before the <application ...> tag
+            python3 - << 'PY'
+          import re, pathlib
+          m = pathlib.Path("android/app/src/main/AndroidManifest.xml")
+          txt = m.read_text()
+          perms = (
+              '    <uses-permission android:name="android.permission.CAMERA" />\n'
+              '    <uses-permission android:name="android.permission.INTERNET" />\n'
+              '    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />\n'
+              '    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />\n'
+              '    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />\n'
+              '    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />\n'
+              '    <uses-feature android:name="android.hardware.camera" android:required="true" />\n'
+          )
+          txt = re.sub(r'(\n)(\s*<application)', r'\1' + perms + r'\2', txt, count=1)
+          m.write_text(txt)
+          print("Permissions inserted")
+          PY
+          fi
+
+      - name: Sync Capacitor to Android
         run: npx cap sync android
 
       - name: Grant execute permission to gradlew
         run: chmod +x android/gradlew
 
       - name: Build debug APK
-        run: cd android && ./gradlew assembleDebug --no-daemon
+        run: cd android && ./gradlew assembleDebug --no-daemon --stacktrace
 
-      - name: Upload APK
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: ar-drawing-pro-debug-apk
           path: app/android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
+          if-no-files-found: error
