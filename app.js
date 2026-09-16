@@ -11,6 +11,14 @@
   const startScreen  = $('start-screen');
   const startBtn     = $('start-btn');
   const seeTutorial  = $('see-tutorial-btn');
+  const installBtn   = $('install-app-btn');
+  const footerNote   = $('footer-note');
+  const installModal = $('install-modal');
+  const closeInstall = $('close-install');
+  const iosBody      = $('install-ios');
+  const androidBody  = $('install-android');
+  const desktopBody  = $('install-desktop');
+  const androidInstallBtn = $('android-install-btn');
   const onboarding   = $('onboarding');
   const onbSlides    = $('onb-slides');
   const onbNext      = $('onb-next');
@@ -616,6 +624,88 @@
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     startBtn.disabled = true;
     startBtn.innerHTML = 'Camera not supported';
+  }
+
+  // ---------- PWA install flow ----------
+  //
+  // Detect platform so we can show the right instructions. iOS never fires
+  // beforeinstallprompt; the only way to install is Safari's Share sheet.
+  // Android Chrome/Edge fire beforeinstallprompt; we capture it and show
+  // an in-app "Install" button that calls prompt() directly.
+  const ua = navigator.userAgent;
+  const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+  const isStandalone =
+    window.matchMedia('(display-mode: standalone)').matches ||
+    window.navigator.standalone === true;
+
+  let deferredInstallPrompt = null;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    installBtn.classList.remove('hidden');
+  });
+  window.addEventListener('appinstalled', () => {
+    deferredInstallPrompt = null;
+    installBtn.classList.add('hidden');
+    showToast('Installed! Launch from your home screen.', 'success', 3000);
+  });
+
+  // Always offer the Install button on iOS Safari (before install prompt is impossible)
+  if (isIOS && !isStandalone) {
+    installBtn.classList.remove('hidden');
+  }
+  // Hide it if we're already running installed
+  if (isStandalone) {
+    installBtn.classList.add('hidden');
+    footerNote.textContent = 'Installed · Works offline';
+    footerNote.classList.add('ready');
+  }
+
+  function openInstallSheet() {
+    installModal.classList.remove('hidden');
+    iosBody.classList.toggle('hidden',      !isIOS);
+    androidBody.classList.toggle('hidden',   isIOS || !('ontouchstart' in window));
+    desktopBody.classList.toggle('hidden',   isIOS || ('ontouchstart' in window));
+    // Toggle the actual install button visibility
+    androidInstallBtn.classList.toggle('hidden', !deferredInstallPrompt);
+  }
+  installBtn.addEventListener('click', () => { haptic('light'); openInstallSheet(); });
+  closeInstall.addEventListener('click', () => installModal.classList.add('hidden'));
+  androidInstallBtn.addEventListener('click', async () => {
+    if (!deferredInstallPrompt) return;
+    deferredInstallPrompt.prompt();
+    const { outcome } = await deferredInstallPrompt.userChoice;
+    if (outcome === 'accepted') installModal.classList.add('hidden');
+    deferredInstallPrompt = null;
+  });
+
+  // ---------- Service worker ----------
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').then((reg) => {
+        // If the SW updates while the page is open, prompt to reload
+        reg.addEventListener('updatefound', () => {
+          const nw = reg.installing;
+          if (!nw) return;
+          nw.addEventListener('statechange', () => {
+            if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+              showToast('New version available — tap to reload', null, 5000);
+              toast.addEventListener('click', () => {
+                nw.postMessage('skipWaiting');
+                window.location.reload();
+              }, { once: true });
+            }
+          });
+        });
+      }).catch((err) => console.warn('SW registration failed', err));
+      // Show offline-ready indicator once SW controls the page
+      navigator.serviceWorker.ready.then(() => {
+        if (!isStandalone) {
+          footerNote.textContent = 'Ready for offline · Camera permission required';
+          footerNote.classList.add('ready');
+        }
+      });
+    });
   }
 
   // ---------- Init ----------
