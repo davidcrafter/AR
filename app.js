@@ -12,7 +12,6 @@
   const stage        = $('stage');
   const cameraEl     = $('camera');
   const overlayImg   = $('overlay-img');
-  const recordCanvas = $('record-canvas');
   const recIndicator = $('rec-indicator');
   const recTimeEl    = $('rec-time');
   const closeBtn     = $('close-btn');
@@ -53,10 +52,8 @@
     recording: false,
     mediaRecorder: null,
     recordedChunks: [],
-    recordStream: null,
     recordStart: 0,
     recordTimer: null,
-    animId: null,
     lastBlobUrl: null,
   };
 
@@ -333,75 +330,20 @@
     }
   }
 
-  // ---------- Recording via canvas compositing ----------
-  function setupRecordCanvas() {
-    const rect = stage.getBoundingClientRect();
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const w = Math.round(rect.width  * dpr);
-    const h = Math.round(rect.height * dpr);
-    recordCanvas.width  = w;
-    recordCanvas.height = h;
-    return { w, h, dpr, rect };
-  }
-
-  function drawCoverVideo(ctx, video, W, H) {
-    if (!video.videoWidth) return;
-    const vw = video.videoWidth;
-    const vh = video.videoHeight;
-    const scale = Math.max(W / vw, H / vh);
-    const dw = vw * scale;
-    const dh = vh * scale;
-    const dx = (W - dw) / 2;
-    const dy = (H - dh) / 2;
-
-    // Mirror for front camera to match on-screen view
-    if (state.facing === 'user') {
-      ctx.save();
-      ctx.translate(W, 0);
-      ctx.scale(-1, 1);
-      ctx.drawImage(video, W - dx - dw, dy, dw, dh);
-      ctx.restore();
-    } else {
-      ctx.drawImage(video, dx, dy, dw, dh);
-    }
-  }
-
-  function drawOverlay(ctx, W, H, dpr) {
-    if (!overlayImg.complete || !overlayImg.naturalWidth) return;
-    if (overlayImg.classList.contains('hidden-img')) return;
-    ctx.save();
-    ctx.globalAlpha = state.opacity;
-    // Center of stage (already accounts for cover fit above)
-    ctx.translate(W / 2 + state.tx * dpr, H / 2 + state.ty * dpr);
-    ctx.rotate(state.rotation * Math.PI / 180);
-    const sx = state.flipH ? -state.scale : state.scale;
-    ctx.scale(sx, state.scale);
-    const w = state.baseW * dpr;
-    const h = state.baseH * dpr;
-    ctx.drawImage(overlayImg, -w / 2, -h / 2, w, h);
-    ctx.restore();
-  }
-
-  function renderFrame() {
-    const ctx = recordCanvas.getContext('2d');
-    const W = recordCanvas.width;
-    const H = recordCanvas.height;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, W, H);
-    drawCoverVideo(ctx, cameraEl, W, H);
-    drawOverlay(ctx, W, H, dpr);
-    if (state.recording) state.animId = requestAnimationFrame(renderFrame);
-  }
-
+  // ---------- Recording ----------
+  // We record the RAW camera stream directly. The overlay stays on-screen as a
+  // tracing guide but is NOT included in the recorded video — only what the
+  // back camera sees (i.e. your paper and hand) is captured.
   function pickMimeType() {
+    // Prefer MP4 on Safari/iOS, WebM elsewhere. First supported wins.
     const candidates = [
+      'video/mp4;codecs=avc1.42E01E',
+      'video/mp4;codecs=h264',
+      'video/mp4',
       'video/webm;codecs=vp9,opus',
       'video/webm;codecs=vp9',
       'video/webm;codecs=vp8',
       'video/webm',
-      'video/mp4;codecs=h264',
-      'video/mp4',
     ];
     for (const t of candidates) {
       if (window.MediaRecorder && MediaRecorder.isTypeSupported(t)) return t;
@@ -415,21 +357,21 @@
       showToast('Recording not supported in this browser');
       return;
     }
+    if (!state.stream) {
+      showToast('Camera is not ready yet');
+      return;
+    }
 
-    setupRecordCanvas();
-    state.recording = true;
-    renderFrame();
-
-    state.recordStream = recordCanvas.captureStream(30);
+    // Feed the camera MediaStream straight into MediaRecorder.
+    // The on-screen overlay is a DOM element on top of the video and never
+    // touches the recorded pixels.
     const mime = pickMimeType();
     try {
-      state.mediaRecorder = new MediaRecorder(state.recordStream,
-        mime ? { mimeType: mime, videoBitsPerSecond: 4_000_000 } : undefined);
+      state.mediaRecorder = new MediaRecorder(state.stream,
+        mime ? { mimeType: mime, videoBitsPerSecond: 6_000_000 } : undefined);
     } catch (err) {
       console.error(err);
       showToast('Could not start recorder');
-      state.recording = false;
-      cancelAnimationFrame(state.animId);
       return;
     }
 
@@ -442,8 +384,14 @@
       const blob = new Blob(state.recordedChunks, { type });
       openPreview(blob, type);
     };
+    state.mediaRecorder.onerror = (e) => {
+      console.error('Recorder error', e);
+      showToast('Recorder error — stopping');
+      stopRecording();
+    };
 
     state.mediaRecorder.start(200);
+    state.recording = true;
     state.recordStart = Date.now();
     recIndicator.classList.remove('hidden');
     recordBtn.classList.add('recording');
@@ -451,20 +399,21 @@
     state.recordTimer = setInterval(() => {
       recTimeEl.textContent = fmtTime(Date.now() - state.recordStart);
     }, 250);
+    // Disable buttons that would kill the camera stream mid-recording
+    flipCamBtn.disabled = true;
+    closeBtn.disabled = true;
+    showToast('Recording camera only — overlay is guide only');
   }
 
   function stopRecording() {
     if (!state.recording) return;
     state.recording = false;
-    cancelAnimationFrame(state.animId);
     clearInterval(state.recordTimer);
     recIndicator.classList.add('hidden');
     recordBtn.classList.remove('recording');
+    flipCamBtn.disabled = false;
+    closeBtn.disabled = false;
     try { state.mediaRecorder.stop(); } catch (_) {}
-    if (state.recordStream) {
-      state.recordStream.getTracks().forEach((t) => t.stop());
-      state.recordStream = null;
-    }
   }
 
   function openPreview(blob, type) {
@@ -562,10 +511,7 @@
     showToast('Recording discarded');
   });
 
-  // Recompute canvas size if user rotates device / resizes
-  window.addEventListener('resize', () => {
-    if (state.recording) setupRecordCanvas();
-  });
+
 
   // Prevent iOS scroll bounce when interacting with stage
   document.addEventListener('gesturestart', (e) => e.preventDefault());

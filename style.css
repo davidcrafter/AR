@@ -100,12 +100,6 @@ html, body {
 .overlay-img.locked { pointer-events: none; }
 .overlay-img.hidden-img { display: none; }
 
-#record-canvas {
-  position: absolute;
-  left: -99999px; top: -99999px;
-  width: 1px; height: 1px;
-}
-
 /* ---------- Top bar ---------- */
 .top-bar {
   position: absolute;
