@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#000000" />
+<title>AR Drawing Pro</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Start / permission screen -->
+  <div id="start-screen" class="screen">
+    <div class="start-card">
+      <div class="logo">✏️ AR Drawing Pro</div>
+      <p class="tagline">
+        Place your phone over paper, overlay any image, and trace it in real life.
+        Record your drawing session as a video.
+      </p>
+      <ol class="steps">
+        <li>Pick a sample or upload a reference image</li>
+        <li>Position your phone above the paper</li>
+        <li>Adjust size, position and opacity to fit</li>
+        <li>Tap 🔒 to lock, then trace by hand</li>
+        <li>Tap ⏺ to record, ⏹ to save</li>
+      </ol>
+      <button id="start-btn" class="primary-btn">Start Camera</button>
+      <p class="hint">Requires camera permission. Works best on a phone.</p>
+    </div>
+  </div>
+
+  <!-- Main AR stage -->
+  <div id="stage" class="stage hidden">
+    <!-- Live camera feed -->
+    <video id="camera" autoplay playsinline muted></video>
+
+    <!-- Tracing image overlay (transformed via CSS) -->
+    <img id="overlay-img" class="overlay-img" alt="tracing overlay" draggable="false" />
+
+    <!-- Hidden canvas used for recording compositing -->
+    <canvas id="record-canvas"></canvas>
+
+    <!-- Recording indicator -->
+    <div id="rec-indicator" class="rec-indicator hidden">
+      <span class="rec-dot"></span>
+      <span id="rec-time">00:00</span>
+    </div>
+
+    <!-- Top bar -->
+    <div class="top-bar">
+      <button class="icon-btn" id="close-btn" title="Close">✕</button>
+      <button class="icon-btn" id="flip-cam-btn" title="Flip camera">🔄</button>
+      <button class="icon-btn" id="lock-btn" title="Lock overlay">🔓</button>
+      <button class="icon-btn" id="pick-image-btn" title="Change image">🖼️</button>
+    </div>
+
+    <!-- Bottom controls -->
+    <div class="bottom-bar">
+      <div class="slider-row">
+        <span class="slider-label">Opacity</span>
+        <input type="range" id="opacity-slider" min="5" max="100" value="40" />
+        <span id="opacity-value">40%</span>
+      </div>
+
+      <div class="action-row">
+        <button class="icon-btn small" id="flip-h-btn" title="Flip horizontal">↔️</button>
+        <button class="icon-btn small" id="rotate-btn" title="Rotate 90°">⟳</button>
+        <button class="record-btn" id="record-btn" title="Record">
+          <span class="record-inner"></span>
+        </button>
+        <button class="icon-btn small" id="reset-btn" title="Reset transform">↺</button>
+        <button class="icon-btn small" id="grid-btn" title="Toggle grid">▦</button>
+      </div>
+    </div>
+
+    <!-- Optional grid overlay for alignment -->
+    <div id="grid-overlay" class="grid-overlay hidden"></div>
+  </div>
+
+  <!-- Image picker modal -->
+  <div id="image-picker" class="modal hidden">
+    <div class="modal-card">
+      <h2>Choose a reference image</h2>
+      <label class="upload-btn">
+        Upload from device
+        <input type="file" id="file-input" accept="image/*" hidden />
+      </label>
+      <div class="sample-grid" id="sample-grid"></div>
+      <button class="secondary-btn" id="close-picker">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Video preview / save modal -->
+  <div id="video-modal" class="modal hidden">
+    <div class="modal-card">
+      <h2>Your recording</h2>
+      <video id="preview-video" controls playsinline></video>
+      <div class="modal-actions">
+        <a id="download-link" class="primary-btn" download="ar-drawing.webm">⬇ Save Video</a>
+        <button class="secondary-btn" id="discard-btn">Discard</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
