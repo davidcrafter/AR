@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2732 2732">
+  <defs>
+    <radialGradient id="bg" cx="0.5" cy="0.5" r="0.7">
+      <stop offset="0%" stop-color="#1a1a26"/>
+      <stop offset="100%" stop-color="#0a0a0f"/>
+    </radialGradient>
+    <linearGradient id="pill" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ff3b30"/>
+      <stop offset="100%" stop-color="#ff7a45"/>
+    </linearGradient>
+  </defs>
+  <rect width="2732" height="2732" fill="url(#bg)"/>
+  <!-- Centered rounded logo tile -->
+  <g transform="translate(1116 1116)">
+    <rect x="0" y="0" width="500" height="500" rx="110" ry="110" fill="url(#pill)"/>
+    <!-- Pencil -->
+    <g transform="translate(160 90) rotate(-15)" stroke="#ffffff" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" fill="none">
+      <path d="M20 30 L100 30 L100 280 L60 340 L20 280 Z"/>
+      <path d="M20 280 L60 340 L100 280"/>
+      <line x1="20" y1="70" x2="100" y2="70"/>
+    </g>
+  </g>
+  <text x="1366" y="1780" text-anchor="middle" font-family="-apple-system, Segoe UI, sans-serif" font-size="110" font-weight="800" fill="#ffffff" letter-spacing="-3">AR Drawing Pro</text>
+  <text x="1366" y="1880" text-anchor="middle" font-family="-apple-system, Segoe UI, sans-serif" font-size="46" font-weight="500" fill="#8a8a99" letter-spacing="8">TRACE  ·  RECORD  ·  SHARE</text>
+</svg>

@@ -1,0 +1,27 @@
+# Deps
+node_modules/
+package-lock.json
+
+# Capacitor generated platform folders (regenerate with `cap add`)
+ios/
+android/
+
+# Build outputs
+*.apk
+*.aab
+*.ipa
+dist/
+build/
+
+# System
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Env
+.env
+.env.local
