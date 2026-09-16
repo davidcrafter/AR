@@ -189,6 +189,43 @@ button { font-family: inherit; }
 }
 
 .footer-note { color: var(--fg-3); font-size: 12px; margin-top: 14px; }
+.footer-note.ready { color: var(--success); }
+.footer-note.ready::before { content: '● '; }
+
+.start-links {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  margin-top: 4px;
+}
+.start-links .text-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+}
+
+/* Install modal specifics */
+.install-body { padding: 4px 0; }
+.install-lead { color: var(--fg-2); font-size: 15px; line-height: 1.5; margin: 0 0 16px; }
+.install-steps {
+  margin: 0 0 16px;
+  padding-left: 20px;
+  color: var(--fg-2);
+  line-height: 1.7;
+  font-size: 15px;
+}
+.install-steps li::marker { color: var(--brand); font-weight: 700; }
+.install-steps strong { color: var(--fg); font-weight: 700; }
+.ios-share-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px;
+  background: rgba(0, 122, 255, 0.15);
+  color: #0a84ff;
+  border-radius: 6px;
+  vertical-align: middle;
+  margin: 0 4px;
+}
+.install-note {
+  color: var(--fg-3); font-size: 13px; margin: 0;
+  padding: 12px; background: var(--panel-2); border-radius: var(--radius-s);
+}
+#android-install-btn { margin-bottom: 12px; }
 
 /* ============================================================
    ONBOARDING

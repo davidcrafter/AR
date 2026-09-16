@@ -7,8 +7,20 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="AR Drawing Pro" />
-  <link rel="apple-touch-icon" href="icon-192.png" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="format-detection" content="telephone=no" />
+
   <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png" />
+
+  <!-- Apple touch icons — iOS uses these when "Add to Home Screen" -->
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
+  <link rel="apple-touch-icon" sizes="167x167" href="apple-touch-icon-167.png" />
+  <link rel="apple-touch-icon" sizes="152x152" href="apple-touch-icon-152.png" />
+  <link rel="apple-touch-icon" sizes="120x120" href="apple-touch-icon-120.png" />
+
   <title>AR Drawing Pro</title>
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -129,8 +141,14 @@
       <svg class="icon"><use href="#i-camera"/></svg>
       Start Drawing
     </button>
-    <button id="see-tutorial-btn" class="text-btn">See how it works</button>
-    <div class="footer-note">Requires camera permission · Works offline</div>
+    <div class="start-links">
+      <button id="see-tutorial-btn" class="text-btn">How it works</button>
+      <button id="install-app-btn" class="text-btn hidden">
+        <svg class="icon icon-sm"><use href="#i-download"/></svg>
+        Install App
+      </button>
+    </div>
+    <div class="footer-note" id="footer-note">Requires camera permission · Works offline</div>
   </div>
 </div>
 
@@ -285,6 +303,53 @@
       <button class="secondary-btn" id="discard-btn" aria-label="Discard">
         <svg class="icon"><use href="#i-trash"/></svg>
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- Install-to-Home-Screen instructions (iOS) -->
+<div id="install-modal" class="modal hidden">
+  <div class="modal-card">
+    <div class="grabber"></div>
+    <div class="modal-header">
+      <h2 class="modal-title">Install AR Drawing Pro</h2>
+      <button class="glass-btn" id="close-install" aria-label="Close">
+        <svg class="icon"><use href="#i-close"/></svg>
+      </button>
+    </div>
+
+    <div id="install-ios" class="install-body hidden">
+      <p class="install-lead">Add it to your Home Screen — works offline like a real app.</p>
+      <ol class="install-steps">
+        <li>
+          Tap the <strong>Share</strong> button
+          <span class="ios-share-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 3v13"/><path d="M8 7l4-4 4 4"/>
+              <rect x="4" y="10" width="16" height="11" rx="2"/>
+            </svg>
+          </span>
+          in Safari (bottom of the screen).
+        </li>
+        <li>Scroll down and tap <strong>Add to Home Screen</strong>.</li>
+        <li>Tap <strong>Add</strong>. The app icon appears on your Home Screen.</li>
+        <li>Open it from your Home Screen — no address bar, works offline.</li>
+      </ol>
+      <p class="install-note">On iPhone this only works in <strong>Safari</strong> — not Chrome or Firefox.</p>
+    </div>
+
+    <div id="install-android" class="install-body hidden">
+      <p class="install-lead">Install as a real app on your phone — offline-ready.</p>
+      <button id="android-install-btn" class="primary-btn">
+        <svg class="icon"><use href="#i-download"/></svg>
+        Install App
+      </button>
+      <p class="install-note">Or open the browser menu (⋮) → <strong>Add to Home screen</strong> / <strong>Install app</strong>.</p>
+    </div>
+
+    <div id="install-desktop" class="install-body hidden">
+      <p class="install-lead">On a phone, this app can be installed to your home screen.</p>
+      <p class="install-note">Open <strong>https://davidcrafter.github.io/AR/</strong> on your iPhone in Safari or Android in Chrome to install.</p>
     </div>
   </div>
 </div>
